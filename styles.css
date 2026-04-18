@@ -493,6 +493,30 @@ section:first-child { margin-top: 48px; }
   margin-top: 2px;
 }
 
+/* Clickable stat card */
+.stat-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease;
+  display: block;
+}
+.stat-link:hover {
+  text-decoration: none;
+  background: var(--paper-deep);
+  box-shadow: inset 6px 0 0 var(--accent);
+}
+.stat-link:hover .stat-big { color: var(--accent); }
+.stat-link:hover .stat-arrow { opacity: 1; transform: translate(2px, -2px); }
+.stat-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  opacity: 0.35;
+  transition: opacity 160ms, transform 160ms;
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
 /* ============================================================== BY DAY  */
 .byday-grid {
   display: grid;
@@ -765,6 +789,9 @@ section:first-child { margin-top: 48px; }
   transition: background 120ms, padding-left 120ms;
   position: relative;
 }
+.puzzle-list.ranked .puzzle-item {
+  grid-template-columns: 84px 68px 92px 1fr auto auto;
+}
 .puzzle-item:hover {
   background: var(--paper-deep);
   padding-left: 14px;
@@ -782,10 +809,141 @@ section:first-child { margin-top: 48px; }
     grid-template-rows: auto auto auto;
     gap: 10px;
   }
+  .puzzle-list.ranked .puzzle-item {
+    grid-template-columns: 64px 1fr;
+  }
   .pi-rating { grid-column: 2; grid-row: 1; justify-self: end; }
   .pi-meta { grid-column: 1 / -1; grid-row: 3; }
   .pi-actions { grid-column: 1 / -1; grid-row: 4; justify-self: start; }
 }
+
+/* ----- rank column / medals / duds -------------------------------------- */
+.pi-rank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+.pi-rank-num {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 96, "wght" 400;
+  font-style: italic;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ink-mute);
+  letter-spacing: -0.02em;
+}
+.pi-rank-num::before { content: "№ "; font-family: var(--mono); font-size: 11px; font-style: normal; color: var(--ink-faint); letter-spacing: 0.08em; }
+
+/* Medal / award badge */
+.pi-award {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 96, "wght" 600;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--paper);
+  box-shadow: 0 2px 0 rgba(20,18,14,.25), inset 0 0 0 2px var(--ink);
+  transform: rotate(-6deg);
+  transition: transform 200ms ease;
+}
+.puzzle-item:hover .pi-award { transform: rotate(0deg) scale(1.04); }
+.pi-award::before,
+.pi-award::after {
+  /* ribbon tails */
+  content: "";
+  position: absolute;
+  top: 88%;
+  width: 8px;
+  height: 14px;
+  background: var(--accent-deep);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+  z-index: -1;
+}
+.pi-award::before { left: 12px; transform: rotate(-8deg); }
+.pi-award::after  { right: 12px; transform: rotate(8deg); }
+
+.pi-award.gold {
+  background: radial-gradient(circle at 30% 30%, #F4D87A 0%, #D4A54E 55%, #8B6A20 100%);
+}
+.pi-award.silver {
+  background: radial-gradient(circle at 30% 30%, #EAEAE6 0%, #BFBDB5 55%, #7A7872 100%);
+}
+.pi-award.bronze {
+  background: radial-gradient(circle at 30% 30%, #E0A879 0%, #A56B3C 55%, #5D3915 100%);
+}
+.pi-award.gold::before, .pi-award.gold::after   { background: var(--accent-deep); }
+.pi-award.silver::before, .pi-award.silver::after { background: #4a4842; }
+.pi-award.bronze::before, .pi-award.bronze::after { background: #3d2208; }
+.pi-award.dud::before, .pi-award.dud::after { display: none; }
+
+/* Dud — round badge, distinct color per type, thematic icon + rank pip */
+.pi-award.dud {
+  color: var(--paper);
+  transform: rotate(-4deg);
+  overflow: visible;
+}
+.pi-award.turkey  { background: radial-gradient(circle at 30% 30%, #A65A36 0%, #7A3318 55%, #3D1405 100%); }
+.pi-award.lemon   { background: radial-gradient(circle at 30% 30%, #D8BC52 0%, #8E6C14 55%, #443010 100%); }
+.pi-award.clunker { background: radial-gradient(circle at 30% 30%, #6A6864 0%, #3A3834 55%, #151310 100%); }
+
+.pi-award .award-icon {
+  width: 30px;
+  height: 30px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pi-award.gold .award-icon,
+.pi-award.silver .award-icon,
+.pi-award.bronze .award-icon {
+  width: 22px; height: 22px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.pi-award .rank-pip {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 2px var(--paper-deep);
+}
+.pi-award.gold .rank-pip   { background: var(--ink); }
+.pi-award.dud  .rank-pip   { background: var(--accent); color: var(--paper); }
+
+.pi-award-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.pi-rank.dud-rank .pi-award-label { color: var(--accent-deep); }
+.pi-rank.gold-rank .pi-award-label { color: #8B6A20; font-weight: 700; }
+.pi-rank.silver-rank .pi-award-label { color: #4a4842; font-weight: 700; }
+.pi-rank.bronze-rank .pi-award-label { color: #6A3A10; font-weight: 700; }
 
 .pi-day {
   font-family: var(--mono);
@@ -932,6 +1090,23 @@ section:first-child { margin-top: 48px; }
   margin: 16px 0 0;
   letter-spacing: 0.04em;
 }
+
+/* =========================================================== CACHE NOTE */
+.cache-note {
+  max-width: var(--col-max);
+  margin: 12px auto 0;
+  padding: 10px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--accent-tint);
+  border-left: 4px solid var(--accent);
+  margin-left: var(--pad-x);
+  margin-right: var(--pad-x);
+}
+.cache-note strong { color: var(--accent-deep); margin-right: 6px; }
+.cache-note em { font-style: italic; color: var(--ink-soft); }
 
 /* =========================================================== STATUS BAR */
 .status {

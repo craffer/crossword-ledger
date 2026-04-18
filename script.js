@@ -4,8 +4,10 @@
    ========================================================================== */
 
 const API_URL = "https://crossword.x7x11x13.workers.dev/";
+const FALLBACK_URL = "./data.json";
 const DAY_ORDER = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const PAGE_SIZE = 25;
+const STORAGE_KEY = "cwl.filters.v1";
 
 const state = {
   all: [],          // raw array from API, oldest→newest sorted
@@ -66,15 +68,38 @@ function setStatus(text, isError = false) {
 }
 
 /* ---------- data fetch -------------------------------------------------- */
+async function fetchFromUrl(url) {
+  const r = await fetch(url, { cache: "no-cache" });
+  if (!r.ok) throw new Error(`${url} → HTTP ${r.status}`);
+  const body = await r.text();
+  if (body.startsWith("error code")) throw new Error(`${url} → ${body.trim()}`);
+  return JSON.parse(body);
+}
+
 async function loadData() {
   setStatus("Setting the type…");
-  const r = await fetch(API_URL, { cache: "no-cache" });
-  if (!r.ok) throw new Error(`API ${r.status}`);
-  const raw = await r.json();
+  let raw, usedFallback = false;
+  try {
+    raw = await fetchFromUrl(API_URL);
+  } catch (err) {
+    console.warn("Live API failed, trying local snapshot:", err.message);
+    raw = await fetchFromUrl(FALLBACK_URL);
+    usedFallback = true;
+  }
   const enriched = raw
     .filter(e => e && e.dateString)
     .map(e => ({ ...e, date: parseDate(e.dateString) }))
     .sort((a, b) => a.date - b.date); // oldest first
+  if (usedFallback) {
+    setStatus("Live API unreachable — showing cached snapshot", false);
+    const lastDate = enriched[enriched.length - 1]?.date;
+    if (lastDate) {
+      const note = document.createElement("div");
+      note.className = "cache-note";
+      note.innerHTML = `<strong>⚠</strong> The upstream poll API is currently unreachable. Showing a cached snapshot through <em>${fmtLongDate(lastDate)}</em>.`;
+      document.querySelector(".masthead").after(note);
+    }
+  }
   return enriched;
 }
 
@@ -184,10 +209,14 @@ function renderStats(data) {
   if (best) {
     $("#statBestRating").textContent = best.averageRating.toFixed(2);
     $("#statBestDate").innerHTML = `<em>${best.dayName}, ${fmtShortDate(best.date)}</em><br>${escapeHtml(best.author)}`;
+    $("#statBestLink").href = nytUrlForDate(best.date);
+    $("#statBestLink").title = `Play: ${best.author} — ${fmtShortDate(best.date)}`;
   }
   if (worst) {
     $("#statWorstRating").textContent = worst.averageRating.toFixed(2);
     $("#statWorstDate").innerHTML = `<em>${worst.dayName}, ${fmtShortDate(worst.date)}</em><br>${escapeHtml(worst.author)}`;
+    $("#statWorstLink").href = nytUrlForDate(worst.date);
+    $("#statWorstLink").title = `Play: ${worst.author} — ${fmtShortDate(worst.date)}`;
   }
 }
 
@@ -362,7 +391,13 @@ function hideTip() {
 }
 
 /* ---------- ARCHIVE: list + filters ------------------------------------- */
+function persistFilters() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.filters)); }
+  catch {}
+}
+
 function applyFilters() {
+  persistFilters();
   const { day, sort, search } = state.filters;
   let out = state.all.filter(e => e.pollExists && e.votes > 0);
 
@@ -387,20 +422,90 @@ function applyFilters() {
 
 function renderList() {
   const host = $("#puzzleList");
+  const ranked = state.filters.sort === "rating-desc" || state.filters.sort === "rating-asc";
+  const dudMode = state.filters.sort === "rating-asc"; // top three positions are "worst"
   const toShow = state.filtered.slice(0, state.visibleCount);
-  host.innerHTML = toShow.map(puzzleListItem).join("");
+  host.classList.toggle("ranked", ranked);
+  host.innerHTML = toShow.map((e, i) => puzzleListItem(e, i, ranked, dudMode)).join("");
 
   $("#archiveCount").textContent =
     `Showing ${toShow.length.toLocaleString()} of ${state.filtered.length.toLocaleString()} puzzles`;
   $("#loadMore").style.display = state.visibleCount < state.filtered.length ? "" : "none";
 }
 
-function puzzleListItem(e) {
+const ICONS = {
+  star: `<svg class="award-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2l2.77 6.63 7.18.6-5.46 4.7 1.66 7.01L12 17.42l-6.15 3.71 1.66-7.01L2.05 9.43l7.18-.6z"/></svg>`,
+  turkey: `<svg class="award-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <!-- tail feathers -->
+      <path d="M12 3.5 L12 12 M6.7 4.9 L10 12 M2.8 8.3 L8 12 M17.3 4.9 L14 12 M21.2 8.3 L16 12"/>
+      <!-- body -->
+      <circle cx="12" cy="16.5" r="3.4"/>
+      <!-- beak + wattle -->
+      <path d="M12 14.5 L11.5 16 L12 16.5 M13.5 15.4 L14.4 15.4"/>
+    </svg>`,
+  lemon: `<svg class="award-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <!-- leaf -->
+      <path d="M16 5.3 Q18.6 4 20.2 5.1 Q19.3 7 17 7.2"/>
+      <!-- lemon body -->
+      <ellipse cx="11.5" cy="13" rx="7.5" ry="6"/>
+      <!-- slice divisions -->
+      <line x1="11.5" y1="7" x2="11.5" y2="19"/>
+      <line x1="4" y1="13" x2="19" y2="13"/>
+      <line x1="6" y1="8" x2="17" y2="18"/>
+      <line x1="6" y1="18" x2="17" y2="8"/>
+    </svg>`,
+  clunker: `<svg class="award-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <!-- car body -->
+      <path d="M3 15 L5 10 H19 L21 15 V18 H3 Z"/>
+      <!-- window -->
+      <path d="M7 10 L8.5 7 H15.5 L17 10"/>
+      <!-- wheels -->
+      <circle cx="7.5" cy="18" r="1.6"/>
+      <circle cx="16.5" cy="18" r="1.6"/>
+      <!-- smoke puffs (cracked) -->
+      <path d="M20 8 Q22 7 22 9 M19 6 Q21 5 21 7"/>
+      <!-- crack -->
+      <path d="M11 11 L12 13 L11.5 14.5 L13 16" stroke-dasharray="1 1.6"/>
+    </svg>`,
+};
+
+const MEDALS = [
+  { cls: "gold",    label: "Gold",    icon: ICONS.star },
+  { cls: "silver",  label: "Silver",  icon: ICONS.star },
+  { cls: "bronze",  label: "Bronze",  icon: ICONS.star },
+];
+const DUDS = [
+  { cls: "dud turkey",  label: "Turkey",  icon: ICONS.turkey },
+  { cls: "dud lemon",   label: "Lemon",   icon: ICONS.lemon },
+  { cls: "dud clunker", label: "Clunker", icon: ICONS.clunker },
+];
+
+function rankBadge(index, dudMode) {
+  const rank = index + 1;
+  if (index < 3) {
+    const m = dudMode ? DUDS[index] : MEDALS[index];
+    const bucket = dudMode ? "dud-rank" : `${m.cls.split(" ")[0]}-rank`;
+    return `
+      <div class="pi-rank ${bucket}">
+        <div class="pi-award ${m.cls}">
+          ${m.icon}
+          <span class="rank-pip">${rank}</span>
+        </div>
+        <div class="pi-award-label">${m.label}</div>
+      </div>
+    `;
+  }
+  return `<div class="pi-rank"><div class="pi-rank-num">${rank}</div></div>`;
+}
+
+function puzzleListItem(e, index, ranked, dudMode) {
   const score = e.averageRating;
   const cls = ratingClass(score);
   const nyt = nytUrlForDate(e.date);
+  const rankHtml = ranked ? rankBadge(index, dudMode) : "";
   return `
     <li class="puzzle-item">
+      ${rankHtml}
       <div class="pi-day">${e.dayName.slice(0,3).toUpperCase()}<strong>${String(e.date.getDate()).padStart(2,"0")}</strong></div>
       <div class="pi-date">${fmtShortDate(e.date)}</div>
       <div class="pi-meta">
@@ -458,9 +563,38 @@ function escapeHtml(s) {
 }
 
 /* ---------- init -------------------------------------------------------- */
+const ALLOWED_SORTS = ["date-desc","date-asc","rating-desc","rating-asc","votes-desc"];
+const ALLOWED_DAYS  = ["all","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+function restoreFilters() {
+  // 1) stored preference
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (ALLOWED_SORTS.includes(s?.sort)) state.filters.sort = s.sort;
+      if (ALLOWED_DAYS.includes(s?.day))   state.filters.day  = s.day;
+      if (typeof s?.search === "string")    state.filters.search = s.search;
+    }
+  } catch {}
+
+  // 2) URL hash overrides
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const sort = params.get("sort");
+  const day = params.get("day");
+  if (sort && ALLOWED_SORTS.includes(sort)) state.filters.sort = sort;
+  if (day  && ALLOWED_DAYS.includes(day))   state.filters.day  = day;
+
+  // 3) reflect into DOM controls
+  const sel = $("#sortBy"); if (sel) sel.value = state.filters.sort;
+  $$("#dayChips .chip").forEach(c => c.classList.toggle("chip-on", c.dataset.day === state.filters.day));
+  const box = $("#searchBox"); if (box) box.value = state.filters.search || "";
+}
+
 async function init() {
   renderMasthead();
   wireFilters();
+  restoreFilters();
   try {
     const data = await loadData();
     state.all = data;
