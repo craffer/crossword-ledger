@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Crossword Ledger — A Public Record of the NYT Crossword</title>
+<meta name="description" content="The daily crossword, as judged by its solvers. Aggregate ratings from r/crossword, linked to every puzzle.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=JetBrains+Mono:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="grain"></div>
+
+<header class="masthead">
+  <div class="masthead-rail">
+    <span class="rail-item" id="volume">Vol. <span id="volNum">—</span> · No. <span id="issueNum">—</span></span>
+    <span class="rail-item rail-center" id="todayDate">—</span>
+    <span class="rail-item rail-right">Est. 2020 · Price: Free</span>
+  </div>
+  <hr class="rule rule-thick">
+  <h1 class="masthead-title">
+    <span class="title-ornament" aria-hidden="true"></span>
+    <span class="title-word">The Crossword Ledger</span>
+    <span class="title-ornament title-ornament-r" aria-hidden="true"></span>
+  </h1>
+  <hr class="rule rule-double">
+  <p class="masthead-tagline">
+    <em>A public record of the</em> New York Times Crossword<em>, as judged by the solvers of</em> r/crossword<em>.</em>
+    <br>
+    <span class="tagline-sub">Data aggregated daily from Reddit polls · <a href="https://crossword.x7x11x13.workers.dev/" target="_blank" rel="noopener">source</a></span>
+  </p>
+  <hr class="rule rule-thick">
+</header>
+
+<main>
+
+<section class="feature" id="featureSection">
+  <div class="section-head">
+    <span class="section-num" aria-hidden="true">I</span>
+    <h2 class="section-title">Latest Verdict</h2>
+    <span class="section-rule" aria-hidden="true"></span>
+  </div>
+
+  <article class="feature-card" id="featureCard">
+    <div class="feature-grid">
+      <div class="feature-left">
+        <div class="feature-dayband" id="featDayband">—</div>
+        <p class="feature-kicker">Published <span id="featDate">—</span> · <span id="featVotes">—</span> votes</p>
+        <h3 class="feature-author" id="featAuthor">Loading…</h3>
+        <p class="feature-editor">Edited by <span id="featEditor">—</span></p>
+
+        <div class="feature-score">
+          <div class="score-mega" id="featScore">—</div>
+          <div class="score-scale">
+            <span class="score-slash">/</span>
+            <span class="score-max">5.00</span>
+            <span class="score-label">average rating</span>
+          </div>
+        </div>
+
+        <div class="feature-actions">
+          <a id="featPlay" class="btn btn-primary" href="#" target="_blank" rel="noopener">
+            <span class="btn-arrow">→</span> Play the Puzzle
+          </a>
+          <a id="featReddit" class="btn btn-secondary" href="#" target="_blank" rel="noopener">
+            Read the Poll ↗
+          </a>
+        </div>
+      </div>
+
+      <div class="feature-right">
+        <div class="feature-mini-grid" id="featMiniGrid" aria-hidden="true"></div>
+        <div class="feature-dist" id="featDist"></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="stats">
+  <div class="section-head">
+    <span class="section-num" aria-hidden="true">II</span>
+    <h2 class="section-title">At a Glance</h2>
+    <span class="section-rule" aria-hidden="true"></span>
+  </div>
+
+  <div class="stat-columns">
+    <div class="stat">
+      <div class="stat-big" id="statTotal">—</div>
+      <div class="stat-label">Puzzles Polled</div>
+      <div class="stat-sub" id="statRange">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-big" id="statAvg">—</div>
+      <div class="stat-label">Overall Average</div>
+      <div class="stat-sub">out of 5.00</div>
+    </div>
+    <div class="stat">
+      <div class="stat-big" id="statBestRating">—</div>
+      <div class="stat-label">Highest Rated</div>
+      <div class="stat-sub" id="statBestDate">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-big" id="statWorstRating">—</div>
+      <div class="stat-label">Lowest Rated</div>
+      <div class="stat-sub" id="statWorstDate">—</div>
+    </div>
+  </div>
+</section>
+
+<section class="byday">
+  <div class="section-head">
+    <span class="section-num" aria-hidden="true">III</span>
+    <h2 class="section-title">By Day of the Week</h2>
+    <span class="section-rule" aria-hidden="true"></span>
+  </div>
+  <p class="section-intro">
+    Mondays are easy, Saturdays are wicked, Sundays are sprawling. How do solvers feel about each day's fare?
+  </p>
+  <div class="byday-grid" id="bydayGrid"></div>
+</section>
+
+<section class="heatmap-section">
+  <div class="section-head">
+    <span class="section-num" aria-hidden="true">IV</span>
+    <h2 class="section-title">The Year in Ink</h2>
+    <span class="section-rule" aria-hidden="true"></span>
+  </div>
+  <p class="section-intro">
+    Every day of the past year. Darker squares fared better. Hover to inspect.
+    <select id="heatmapYear" class="year-select" aria-label="Year"></select>
+  </p>
+  <div class="heatmap-wrap">
+    <div class="heatmap-labels" aria-hidden="true">
+      <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+    </div>
+    <div class="heatmap" id="heatmap"></div>
+  </div>
+  <div class="heatmap-months" id="heatmapMonths" aria-hidden="true"></div>
+  <div class="heatmap-legend">
+    <span class="leg-label">lower</span>
+    <span class="leg-box" style="background:var(--heat-0)"></span>
+    <span class="leg-box" style="background:var(--heat-1)"></span>
+    <span class="leg-box" style="background:var(--heat-2)"></span>
+    <span class="leg-box" style="background:var(--heat-3)"></span>
+    <span class="leg-box" style="background:var(--heat-4)"></span>
+    <span class="leg-label">higher</span>
+  </div>
+</section>
+
+<section class="archive">
+  <div class="section-head">
+    <span class="section-num" aria-hidden="true">V</span>
+    <h2 class="section-title">The Archive</h2>
+    <span class="section-rule" aria-hidden="true"></span>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <span class="filter-legend">Day</span>
+      <div class="filter-chips" id="dayChips">
+        <button class="chip chip-on" data-day="all">All</button>
+        <button class="chip" data-day="Monday">M</button>
+        <button class="chip" data-day="Tuesday">T</button>
+        <button class="chip" data-day="Wednesday">W</button>
+        <button class="chip" data-day="Thursday">T</button>
+        <button class="chip" data-day="Friday">F</button>
+        <button class="chip" data-day="Saturday">S</button>
+        <button class="chip" data-day="Sunday">S</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-legend">Sort by</span>
+      <select id="sortBy" class="select">
+        <option value="date-desc">Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="rating-desc">Highest rated</option>
+        <option value="rating-asc">Lowest rated</option>
+        <option value="votes-desc">Most voted</option>
+      </select>
+    </div>
+
+    <div class="filter-group filter-search">
+      <span class="filter-legend">Search constructor</span>
+      <input id="searchBox" class="input" type="search" placeholder="e.g. Agard, Mulvihill, Dipietro…">
+    </div>
+  </div>
+
+  <div class="archive-count" id="archiveCount">—</div>
+
+  <ol class="puzzle-list" id="puzzleList"></ol>
+
+  <div class="load-more-wrap">
+    <button id="loadMore" class="btn btn-ghost">Show more &nbsp;↓</button>
+  </div>
+</section>
+
+</main>
+
+<footer class="colophon">
+  <hr class="rule rule-thick">
+  <div class="colophon-grid">
+    <div>
+      <h4>About</h4>
+      <p>A small, independent dashboard that aggregates the daily r/crossword rating polls for the <em>New York Times Crossword</em>. No affiliation with <em>The Times</em> or Reddit.</p>
+    </div>
+    <div>
+      <h4>The Rating</h4>
+      <p>Each poll option is worth 5 (Excellent), 4 (Good), 3 (Average), 2 (Poor), or 1 (Terrible). The mean excludes non-solvers.</p>
+    </div>
+    <div>
+      <h4>Credits</h4>
+      <p>Polls compiled by the wonderful volunteers of r/crossword. API by <code>x7x11x13</code>. Typeset in Fraunces &amp; JetBrains Mono.</p>
+    </div>
+  </div>
+  <hr class="rule">
+  <p class="colophon-last">— <em>The Crossword Ledger</em> — <span id="footerYear"></span> —</p>
+</footer>
+
+<div class="status" id="status" role="status" aria-live="polite"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
