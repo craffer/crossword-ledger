@@ -450,7 +450,7 @@ function renderHeatmap(data, range) {
     col++;
   }
 
-  host.style.gridTemplateColumns = `repeat(${col}, 14px)`;
+  host.style.gridTemplateColumns = `repeat(${col}, var(--hm-cell))`;
 
   renderHeatmapMonths(monthPositions, col);
 }
@@ -464,9 +464,8 @@ function renderHeatmapMonths(positions, cols) {
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const entries = Object.values(positions).sort((a, b) => a.col - b.col);
   host.style.display = "grid";
-  host.style.gridTemplateColumns = `repeat(${cols}, 14px)`;
+  host.style.gridTemplateColumns = `repeat(${cols}, var(--hm-cell))`;
   host.style.gap = "2px";
-  host.style.paddingLeft = "44px";
   host.innerHTML = "";
   // When the range spans >1 calendar year, include the year for January labels.
   const crossYear = entries.length > 1 && entries[0].year !== entries[entries.length - 1].year;

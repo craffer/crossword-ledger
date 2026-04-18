@@ -31,7 +31,10 @@
 
     /* Layout */
     --col-max: 1180px;
-    --pad-x: clamp(18px, 4vw, 48px);
+    --pad-x: clamp(14px, 4vw, 48px);
+
+    /* Heatmap cell size (overridden on small screens) */
+    --hm-cell: 14px;
 }
 
 /* --- reset -------------------------------------------------------------- */
@@ -761,12 +764,43 @@ section[id] {
 @media (max-width: 720px) {
     .byday-grid {
         grid-template-columns: repeat(4, 1fr);
+        border-top: none;
+        border-bottom: none;
+    }
+}
+
+/* 4-col layout only (421–720px) — drop right edge & last-row bottom edge */
+@media (min-width: 421px) and (max-width: 720px) {
+    .byday-col:nth-child(4n) {
+        border-right: none;
+    }
+
+    .byday-col:nth-child(n+5) {
+        border-bottom: none;
     }
 }
 
 @media (max-width: 420px) {
     .byday-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* In 2-col layout the right-edge is every even item, and the last row
+       starts at item 7 (a single, orphaned Sunday). */
+    .byday-col:nth-child(2n) {
+        border-right: none;
+    }
+
+    .byday-col:nth-child(n+7) {
+        border-bottom: none;
+    }
+
+    /* When Sunday lands alone in its row, center it instead of leaving it
+       hanging in the left column. */
+    .byday-col:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+        max-width: 50%;
+        margin: 0 auto;
     }
 }
 
@@ -918,17 +952,19 @@ section[id] {
 .heatmap-wrap {
     display: grid;
     grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
     gap: 8px;
     overflow-x: auto;
-    padding: 8px 0;
     border: 2px solid var(--ink);
     background: var(--paper-deep);
     padding: 16px;
 }
 
 .heatmap-labels {
+    grid-column: 1;
+    grid-row: 1;
     display: grid;
-    grid-template-rows: repeat(7, 14px);
+    grid-template-rows: repeat(7, var(--hm-cell));
     gap: 2px;
     padding-top: 0;
     font-family: var(--mono);
@@ -939,21 +975,23 @@ section[id] {
 }
 
 .heatmap-labels span {
-    line-height: 14px;
-    height: 14px;
+    line-height: var(--hm-cell);
+    height: var(--hm-cell);
 }
 
 .heatmap {
+    grid-column: 2;
+    grid-row: 1;
     display: grid;
     grid-auto-flow: column;
-    grid-template-rows: repeat(7, 14px);
+    grid-template-rows: repeat(7, var(--hm-cell));
     gap: 2px;
     min-width: 0;
 }
 
 .hm-cell {
-    width: 14px;
-    height: 14px;
+    width: var(--hm-cell);
+    height: var(--hm-cell);
     background: var(--heat-null);
     border: 1px solid rgba(20, 18, 14, 0.12);
     cursor: pointer;
@@ -997,10 +1035,8 @@ section[id] {
 }
 
 .heatmap-months {
-    display: flex;
-    gap: 0;
-    padding-left: 36px;
-    margin-top: 6px;
+    grid-column: 2;
+    grid-row: 2;
     font-family: var(--mono);
     font-size: 9px;
     letter-spacing: 0.14em;
@@ -1875,5 +1911,321 @@ section[id] {
         animation: none !important;
         transition: none !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* =========================================================== RESPONSIVE — TABLET */
+@media (max-width: 900px) {
+    section {
+        margin-top: 60px;
+    }
+
+    section:first-child {
+        margin-top: 36px;
+    }
+
+    main {
+        padding-bottom: 56px;
+    }
+}
+
+/* =========================================================== RESPONSIVE — PHONE */
+@media (max-width: 640px) {
+    :root {
+        --hm-cell: 11px;
+    }
+
+    section {
+        margin-top: 48px;
+    }
+
+    /* Masthead */
+    .masthead {
+        padding: 20px var(--pad-x) 12px;
+    }
+
+    .masthead-rail {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        gap: 8px;
+    }
+
+    .masthead-title {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        font-size: clamp(38px, 12vw, 84px);
+        margin: 10px 0 8px;
+    }
+
+    .title-ornament {
+        display: none;
+    }
+
+    .title-word {
+        white-space: normal;
+    }
+
+    .masthead-tagline {
+        font-size: 14px;
+        margin: 10px 0;
+    }
+
+    .tagline-sub {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+    }
+
+    /* Section heads */
+    .section-head {
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .section-num {
+        font-size: clamp(34px, 11vw, 56px);
+        padding-right: 4px;
+        border-right-width: 2px;
+        padding-bottom: 4px;
+    }
+
+    .section-rule {
+        display: none;
+    }
+
+    .section-intro {
+        font-size: 16px;
+        margin-bottom: 18px;
+    }
+
+    /* Feature card */
+    .feature-card {
+        padding: 18px;
+    }
+
+    .feature-card::before {
+        width: 140px;
+        height: 140px;
+    }
+
+    .feature-grid {
+        gap: 22px;
+    }
+
+    .feature-author {
+        font-size: clamp(28px, 7vw, 44px);
+    }
+
+    .feature-editor {
+        font-size: 15px;
+        margin-bottom: 20px;
+    }
+
+    .feature-score {
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .score-mega {
+        font-size: clamp(72px, 20vw, 120px);
+    }
+
+    .score-slash {
+        font-size: 32px;
+    }
+
+    .score-max {
+        font-size: 18px;
+    }
+
+    .feature-actions .btn {
+        padding: 10px 14px;
+        font-size: 11px;
+    }
+
+    .feature-right {
+        gap: 18px;
+    }
+
+    .feature-mini-grid {
+        max-width: 220px;
+        margin: 0 auto;
+    }
+
+    .feature-dist {
+        font-size: 11px;
+    }
+
+    .dist-row {
+        grid-template-columns: 64px 1fr 38px;
+        gap: 8px;
+    }
+
+    .feature-note {
+        font-size: 12px;
+    }
+
+    /* Stats */
+    .stat {
+        padding: 18px 14px 20px;
+    }
+
+    /* By Day */
+    .byday-col {
+        padding: 14px 10px 16px;
+        min-height: 170px;
+    }
+
+    .byday-bar {
+        height: 90px;
+    }
+
+    /* Heatmap */
+    .heatmap-controls {
+        padding: 6px 10px;
+    }
+
+    .heatmap-wrap {
+        padding: 12px;
+    }
+
+    .heatmap-legend {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    /* Archive — filters & list */
+    .filters {
+        padding: 12px 0;
+    }
+
+    .puzzle-item {
+        padding: 14px 4px;
+        gap: 8px 12px;
+    }
+
+    .puzzle-item:hover {
+        padding-left: 8px;
+    }
+
+    .pi-date-primary {
+        font-size: 18px;
+    }
+
+    .pi-byline-name {
+        font-size: 14px;
+    }
+
+    .pi-rating-num {
+        font-size: 26px;
+    }
+
+    .pi-award {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+
+    .pi-award .award-icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    .pi-award.gold .award-icon,
+    .pi-award.silver .award-icon,
+    .pi-award.bronze .award-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .pi-award .rank-pip {
+        min-width: 18px;
+        height: 18px;
+        font-size: 10px;
+        padding: 0 4px;
+    }
+
+    .pi-rank-num {
+        font-size: 22px;
+    }
+
+    .puzzle-list.ranked .puzzle-item {
+        grid-template-columns: 52px 1fr auto;
+    }
+
+    /* Constructors */
+    .constructor-col {
+        padding: 18px 14px 14px;
+    }
+
+    .constructor-kicker {
+        font-size: 19px;
+    }
+
+    .cx-row {
+        grid-template-columns: 22px 1fr auto;
+        gap: 10px;
+    }
+
+    .cx-rank {
+        font-size: 22px;
+    }
+
+    .cx-name {
+        font-size: 17px;
+    }
+
+    .cx-avg {
+        font-size: 24px;
+    }
+
+    /* Colophon */
+    .colophon {
+        margin-top: 36px;
+        padding: 0 var(--pad-x) 28px;
+    }
+
+    .colophon-grid {
+        gap: 18px;
+    }
+
+    /* Cache note flushes with the (now smaller) edge padding */
+    .cache-note {
+        margin-left: 14px;
+        margin-right: 14px;
+    }
+}
+
+/* =========================================================== RESPONSIVE — SMALL PHONE */
+@media (max-width: 420px) {
+    :root {
+        --hm-cell: 10px;
+    }
+
+    .masthead-rail .rail-right {
+        display: none;
+    }
+
+    .masthead-title {
+        font-size: clamp(34px, 13vw, 60px);
+    }
+
+    .section-num {
+        border-right: none;
+        padding-right: 0;
+    }
+
+    .feature-actions {
+        width: 100%;
+    }
+
+    .feature-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .pi-link {
+        padding: 5px 7px;
+        font-size: 9px;
     }
 }
