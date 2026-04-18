@@ -53,10 +53,10 @@
 
 <main>
 
-<section class="feature" id="featureSection">
+<section class="feature" id="latest">
   <div class="section-head">
     <span class="section-num" aria-hidden="true">I</span>
-    <h2 class="section-title">Latest Verdict</h2>
+    <h2 class="section-title"><a class="section-anchor" href="#latest">Latest Verdict</a></h2>
     <span class="section-rule" aria-hidden="true"></span>
   </div>
 
@@ -95,10 +95,10 @@
   </article>
 </section>
 
-<section class="stats">
+<section class="stats" id="glance">
   <div class="section-head">
     <span class="section-num" aria-hidden="true">II</span>
-    <h2 class="section-title">At a Glance</h2>
+    <h2 class="section-title"><a class="section-anchor" href="#glance">At a Glance</a></h2>
     <span class="section-rule" aria-hidden="true"></span>
   </div>
 
@@ -126,10 +126,10 @@
   </div>
 </section>
 
-<section class="byday">
+<section class="byday" id="by-day">
   <div class="section-head">
     <span class="section-num" aria-hidden="true">III</span>
-    <h2 class="section-title">By Day of the Week</h2>
+    <h2 class="section-title"><a class="section-anchor" href="#by-day">By Day of the Week</a></h2>
     <span class="section-rule" aria-hidden="true"></span>
   </div>
   <p class="section-intro">
@@ -138,16 +138,21 @@
   <div class="byday-grid" id="bydayGrid"></div>
 </section>
 
-<section class="heatmap-section">
+<section class="heatmap-section" id="year">
   <div class="section-head">
     <span class="section-num" aria-hidden="true">IV</span>
-    <h2 class="section-title">The Year in Ink</h2>
+    <h2 class="section-title"><a class="section-anchor" href="#year">The Year in Ink</a></h2>
     <span class="section-rule" aria-hidden="true"></span>
   </div>
   <p class="section-intro">
-    Every day of the past year. Darker squares fared better. Hover to inspect.
-    <select id="heatmapYear" class="year-select" aria-label="Year"></select>
+    Darker squares fared better. Hover any cell to inspect.
   </p>
+  <div class="heatmap-controls">
+    <label class="control-label" for="heatmapYear">Showing</label>
+    <div class="select-wrap">
+      <select id="heatmapYear" class="select heatmap-select" aria-label="Date range"></select>
+    </div>
+  </div>
   <div class="heatmap-wrap">
     <div class="heatmap-labels" aria-hidden="true">
       <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
@@ -166,10 +171,10 @@
   </div>
 </section>
 
-<section class="archive">
+<section class="archive" id="archive">
   <div class="section-head">
     <span class="section-num" aria-hidden="true">V</span>
-    <h2 class="section-title">The Archive</h2>
+    <h2 class="section-title"><a class="section-anchor" href="#archive">The Archive</a></h2>
     <span class="section-rule" aria-hidden="true"></span>
   </div>
 
@@ -179,29 +184,29 @@
       <div class="filter-chips" id="dayChips">
         <button class="chip chip-on" data-day="all">All</button>
         <button class="chip" data-day="Monday">M</button>
-        <button class="chip" data-day="Tuesday">T</button>
+        <button class="chip" data-day="Tuesday">Tu</button>
         <button class="chip" data-day="Wednesday">W</button>
-        <button class="chip" data-day="Thursday">T</button>
+        <button class="chip" data-day="Thursday">Th</button>
         <button class="chip" data-day="Friday">F</button>
-        <button class="chip" data-day="Saturday">S</button>
-        <button class="chip" data-day="Sunday">S</button>
+        <button class="chip" data-day="Saturday">Sa</button>
+        <button class="chip" data-day="Sunday">Su</button>
       </div>
     </div>
 
     <div class="filter-group">
       <span class="filter-legend">Sort by</span>
       <select id="sortBy" class="select">
-        <option value="date-desc">Newest first</option>
-        <option value="date-asc">Oldest first</option>
         <option value="rating-desc">Highest rated</option>
         <option value="rating-asc">Lowest rated</option>
+        <option value="date-desc">Newest first</option>
+        <option value="date-asc">Oldest first</option>
         <option value="votes-desc">Most voted</option>
       </select>
     </div>
 
     <div class="filter-group filter-search">
       <span class="filter-legend">Search constructor</span>
-      <input id="searchBox" class="input" type="search" placeholder="e.g. Agard, Mulvihill, Dipietro…">
+      <input id="searchBox" class="input" type="search" placeholder="Loading…">
     </div>
   </div>
 
@@ -211,6 +216,33 @@
 
   <div class="load-more-wrap">
     <button id="loadMore" class="btn btn-ghost">Show more &nbsp;↓</button>
+  </div>
+</section>
+
+<section class="constructors" id="constructors">
+  <div class="section-head">
+    <span class="section-num" aria-hidden="true">VI</span>
+    <h2 class="section-title"><a class="section-anchor" href="#constructors">By the Constructor</a></h2>
+    <span class="section-rule" aria-hidden="true"></span>
+  </div>
+  <p class="section-intro">
+    Who reliably delights — and who reliably doesn't. Minimum <span id="constructorMin">5</span> puzzles to qualify.
+  </p>
+  <div class="constructor-grid">
+    <div class="constructor-col constructor-col-top">
+      <div class="constructor-head">
+        <span class="constructor-kicker">The Favorites</span>
+        <span class="constructor-sub">Highest average rating</span>
+      </div>
+      <ol class="constructor-list" id="constructorTop"></ol>
+    </div>
+    <div class="constructor-col constructor-col-bottom">
+      <div class="constructor-head">
+        <span class="constructor-kicker">The Tough Sells</span>
+        <span class="constructor-sub">Lowest average rating</span>
+      </div>
+      <ol class="constructor-list" id="constructorBottom"></ol>
+    </div>
   </div>
 </section>
 

@@ -13,8 +13,11 @@ const state = {
   all: [],          // raw array from API, oldest→newest sorted
   filtered: [],
   visibleCount: PAGE_SIZE,
-  filters: { day: "all", sort: "date-desc", search: "" },
+  filters: { day: "all", sort: "rating-desc", search: "" },
 };
+
+const HEATMAP_MIN_PUZZLES = 5;
+const HEATMAP_RANGE_LAST365 = "last365";
 
 /* ---------- utility ----------------------------------------------------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -246,7 +249,7 @@ function renderByDay(data) {
 
     return `
       <div class="byday-col">
-        <div class="byday-name">${d.slice(0,3).toUpperCase()}day</div>
+        <div class="byday-name">${d.toUpperCase()}</div>
         <div class="byday-avg">${avg.toFixed(2)}</div>
         <div class="byday-meta"><em>${arr.length.toLocaleString()} puzzles</em></div>
         <div class="byday-bar">${bars}</div>
@@ -256,33 +259,140 @@ function renderByDay(data) {
   }).join("");
 }
 
+/* ---------- CONSTRUCTORS ------------------------------------------------ */
+function splitConstructors(author) {
+  // Normalize collaborators — "A and B", "A & B", "A, B, and C"
+  return String(author || "")
+    .split(/\s*,\s*|\s+and\s+|\s*&\s*/i)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function aggregateConstructors(data) {
+  const byName = new Map();
+  for (const e of data) {
+    if (!e.pollExists || !e.votes) continue;
+    for (const name of splitConstructors(e.author)) {
+      if (!byName.has(name)) byName.set(name, { name, puzzles: [], sum: 0 });
+      const rec = byName.get(name);
+      rec.puzzles.push(e);
+      rec.sum += e.averageRating;
+    }
+  }
+  const out = [];
+  for (const rec of byName.values()) {
+    rec.count = rec.puzzles.length;
+    rec.avg = rec.sum / rec.count;
+    out.push(rec);
+  }
+  return out;
+}
+
+function renderConstructors(data) {
+  const MIN = HEATMAP_MIN_PUZZLES; // min puzzles to qualify
+  const all = aggregateConstructors(data).filter(r => r.count >= MIN);
+
+  const top = [...all].sort((a, b) => b.avg - a.avg || b.count - a.count).slice(0, 5);
+  const bot = [...all].sort((a, b) => a.avg - b.avg || b.count - a.count).slice(0, 5);
+
+  const row = (r, idx, kind) => {
+    const best = [...r.puzzles].sort((a, b) => b.averageRating - a.averageRating)[0];
+    const worst = [...r.puzzles].sort((a, b) => a.averageRating - b.averageRating)[0];
+    const featured = kind === "top" ? best : worst;
+    const featLabel = kind === "top" ? "Best" : "Worst";
+    return `
+      <li class="cx-row cx-${kind}">
+        <span class="cx-rank">${idx + 1}</span>
+        <div class="cx-main">
+          <div class="cx-name">${escapeHtml(r.name)}</div>
+          <div class="cx-meta">
+            ${r.count} puzzles ·
+            <a href="${nytUrlForDate(featured.date)}" target="_blank" rel="noopener" class="cx-feat">
+              ${featLabel}: ${featured.averageRating.toFixed(2)} <span class="cx-feat-date">(${fmtShortDate(featured.date)})</span>
+            </a>
+          </div>
+        </div>
+        <div class="cx-avg ${kind === "top" ? "hi" : "lo"}">${r.avg.toFixed(2)}</div>
+      </li>
+    `;
+  };
+
+  const topHost = $("#constructorTop");
+  const botHost = $("#constructorBottom");
+  if (topHost) topHost.innerHTML = top.map((r, i) => row(r, i, "top")).join("");
+  if (botHost) botHost.innerHTML = bot.map((r, i) => row(r, i, "bot")).join("");
+}
+
+function updateSearchPlaceholder(data) {
+  const box = $("#searchBox");
+  if (!box) return;
+  const counts = new Map();
+  for (const e of data) {
+    if (!e.pollExists || !e.votes) continue;
+    for (const name of splitConstructors(e.author)) {
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+  }
+  const top3 = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([n]) => {
+      // use surname when available
+      const parts = n.split(/\s+/);
+      return parts[parts.length - 1];
+    });
+  if (top3.length) box.placeholder = `e.g. ${top3.join(", ")}…`;
+}
+
 /* ---------- HEATMAP ----------------------------------------------------- */
 let activeTip = null;
 
 function renderHeatmapYears(data) {
   const sel = $("#heatmapYear");
   const years = [...new Set(data.map(e => e.date.getFullYear()))].sort((a,b) => b - a);
-  sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
-  sel.value = years[0];
-  sel.addEventListener("change", () => renderHeatmap(data, Number(sel.value)));
+  const opts = [`<option value="${HEATMAP_RANGE_LAST365}">Last 365 days</option>`]
+    .concat(years.map(y => `<option value="${y}">${y}</option>`));
+  sel.innerHTML = opts.join("");
+  sel.value = HEATMAP_RANGE_LAST365;
+  sel.addEventListener("change", () => {
+    const v = sel.value;
+    if (v === HEATMAP_RANGE_LAST365) renderHeatmap(data, HEATMAP_RANGE_LAST365);
+    else renderHeatmap(data, Number(v));
+  });
 }
 
-function renderHeatmap(data, year) {
+function resolveHeatmapRange(range) {
+  // Returns { start, end, showMonthLabels } — start/end are inclusive day bounds.
+  if (range === HEATMAP_RANGE_LAST365) {
+    const today = new Date();
+    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const start = new Date(end);
+    start.setDate(end.getDate() - 364);
+    return { start, end, showMonthLabels: true };
+  }
+  const year = Number(range);
+  return {
+    start: new Date(year, 0, 1),
+    end: new Date(year, 11, 31),
+    showMonthLabels: true,
+  };
+}
+
+function renderHeatmap(data, range) {
   const host = $("#heatmap");
   host.innerHTML = "";
 
-  // Build lookup keyed by YYYY-MM-DD for this year
+  const { start, end } = resolveHeatmapRange(range);
+
+  // Build lookup keyed by YYYY-MM-DD for entries within range
   const byKey = new Map();
   for (const e of data) {
-    if (e.date.getFullYear() === year) {
+    if (e.date >= start && e.date <= end) {
       byKey.set(keyForDate(e.date), e);
     }
   }
 
-  // Build the grid: start from the Monday on/before Jan 1; end at the Sunday on/after Dec 31.
-  const start = new Date(year, 0, 1);
-  const end = new Date(year, 11, 31);
-  // shift to Monday-based week (Mon=0..Sun=6)
+  // Build the grid: start from the Monday on/before start; end at the Sunday on/after end.
   const dowMon = (d) => (d.getDay() + 6) % 7;
   const gridStart = new Date(start);
   gridStart.setDate(start.getDate() - dowMon(start));
@@ -297,11 +407,10 @@ function renderHeatmap(data, year) {
   while (cur <= gridEnd) {
     for (let row = 0; row < 7; row++) {
       const cell = document.createElement("div");
-      const sameYear = cur.getFullYear() === year;
-      const inRange = sameYear && cur <= end;
+      const inRange = cur >= start && cur <= end;
       const isFuture = cur > today;
 
-      if (!sameYear) {
+      if (!inRange) {
         cell.className = "hm-cell empty";
       } else {
         const entry = byKey.get(keyForDate(cur));
@@ -318,8 +427,6 @@ function renderHeatmap(data, year) {
           cell.dataset.author = entry.author || "";
           cell.dataset.day = entry.dayName || "";
           cell.dataset.votes = entry.votes || 0;
-          cell.style.gridColumn = col + 1;
-          cell.style.gridRow = row + 1;
           cell.addEventListener("mouseenter", showTip);
           cell.addEventListener("mouseleave", hideTip);
           cell.addEventListener("click", () => {
@@ -331,9 +438,12 @@ function renderHeatmap(data, year) {
       cell.style.gridRow = row + 1;
       host.appendChild(cell);
 
-      // track first column of each month to anchor month labels below
-      if (sameYear && cur.getDate() <= 7 && row === 0) {
-        monthPositions[cur.getMonth()] = col;
+      // Track first column of each distinct month (across range) for labels.
+      if (inRange && row === 0) {
+        const monthKey = `${cur.getFullYear()}-${String(cur.getMonth()).padStart(2,"0")}`;
+        if (!(monthKey in monthPositions) && cur.getDate() <= 7) {
+          monthPositions[monthKey] = { col, month: cur.getMonth(), year: cur.getFullYear() };
+        }
       }
       cur.setDate(cur.getDate() + 1);
     }
@@ -352,17 +462,17 @@ function keyForDate(d) {
 function renderHeatmapMonths(positions, cols) {
   const host = $("#heatmapMonths");
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  // place labels using CSS grid proportional to columns
-  const entries = Object.entries(positions).map(([m, col]) => [Number(m), Number(col)]);
-  entries.sort((a, b) => a[0] - b[0]);
+  const entries = Object.values(positions).sort((a, b) => a.col - b.col);
   host.style.display = "grid";
   host.style.gridTemplateColumns = `repeat(${cols}, 14px)`;
   host.style.gap = "2px";
   host.style.paddingLeft = "44px";
   host.innerHTML = "";
-  entries.forEach(([m, col]) => {
+  // When the range spans >1 calendar year, include the year for January labels.
+  const crossYear = entries.length > 1 && entries[0].year !== entries[entries.length - 1].year;
+  entries.forEach(({ col, month, year }) => {
     const span = document.createElement("span");
-    span.textContent = months[m];
+    span.textContent = (crossYear && month === 0) ? `${months[month]} ’${String(year).slice(-2)}` : months[month];
     span.style.gridColumn = `${col + 1} / span 4`;
     host.appendChild(span);
   });
@@ -506,11 +616,10 @@ function puzzleListItem(e, index, ranked, dudMode) {
   return `
     <li class="puzzle-item">
       ${rankHtml}
-      <div class="pi-day">${e.dayName.slice(0,3).toUpperCase()}<strong>${String(e.date.getDate()).padStart(2,"0")}</strong></div>
-      <div class="pi-date">${fmtShortDate(e.date)}</div>
       <div class="pi-meta">
-        <div class="pi-author">${escapeHtml(e.author || "—")}</div>
-        <div class="pi-votes">${e.votes.toLocaleString()} votes · Ed. ${escapeHtml(e.editor || "—")}</div>
+        <div class="pi-date-primary">${fmtLongDate(e.date)}</div>
+        <div class="pi-byline-name">${escapeHtml(e.author || "—")}</div>
+        <div class="pi-sub">${e.votes.toLocaleString()} votes · Ed. ${escapeHtml(e.editor || "—")}</div>
       </div>
       <div class="pi-rating">
         <span class="pi-rating-num ${cls}">${score.toFixed(2)}</span>
@@ -602,7 +711,9 @@ async function init() {
     renderStats(data);
     renderByDay(data);
     renderHeatmapYears(data);
-    renderHeatmap(data, new Date().getFullYear());
+    renderHeatmap(data, HEATMAP_RANGE_LAST365);
+    renderConstructors(data);
+    updateSearchPlaceholder(data);
     applyFilters();
     setStatus(`Loaded ${data.length.toLocaleString()} puzzles`);
   } catch (err) {
