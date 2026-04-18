@@ -318,6 +318,23 @@ section[id] { scroll-margin-top: 24px; }
   color: var(--ink-soft);
   margin: 0 0 28px;
 }
+.feature-note {
+  position: relative;
+  margin: 26px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(20,18,14,0.18);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-mute);
+  max-width: 62ch;
+}
+.feature-note .note-mark {
+  font-style: normal;
+  margin-right: 4px;
+  color: var(--accent);
+}
 
 .feature-score {
   display: flex;
